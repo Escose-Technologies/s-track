@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        { //for running other programs
+        "name": "Python: Run main.py no with arguments",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/src/main.py",
+        "console": "integratedTerminal",
+        "args": [],
+        "jinja": true,
+        "python": "${workspaceFolder}/env/bin/python"
+    }
+    ]
+}
