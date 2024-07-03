@@ -1,3 +1,5 @@
+from datetime import datetime
+import time
 import psutil
 import subprocess
 import logging
@@ -60,14 +62,43 @@ def get_system_info():
         system_info["Detailed_System_Info"] = system_profiler_data
     except Exception as e:
         logging.error(f"Failed to get detailed system information: {e}")
-
+    system_info["Installed_Applications"] = get_installed_applications()
     return system_info
 
+def get_installed_applications():
+    try:
+        apps = subprocess.check_output(['mdfind', 'kMDItemKind="Application"'], text=True).splitlines()
+        apps_info = []
+        for app in apps:
+            try:
+                last_used_output = subprocess.check_output(['mdls', '-name', 'kMDItemLastUsedDate', app], text=True).strip()
+                if "kMDItemLastUsedDate" in last_used_output:
+                    last_used = last_used_output.split("=")[-1].strip().strip("\"")
+                    last_used = datetime.strptime(last_used, "%Y-%m-%d %H:%M:%S %z")
+                else:
+                    last_used = "Never used"
+                apps_info.append({
+                    "Path": app,
+                    "LastUsed": last_used
+                })
+            except Exception as e:
+                logging.error(f"Failed to get last used time for app {app}: {e}")
+                apps_info.append({
+                    "Path": app,
+                    "LastUsed": "Unknown"
+                })
+        return apps_info
+    except Exception as e:
+        logging.error(f"Failed to get installed applications: {e}")
+        return []
 if __name__ == "__main__":
     try:
+        start_time = time.time()
         info = get_system_info()
+        end_time = time.time()
         with open("system_report.json", "w") as report_file:
             json.dump(info, report_file, indent=4)
         logging.info("System report generated successfully.")
+        logging.info(f"Total time taken to generate the report: {end_time - start_time} seconds")
     except Exception as e:
         logging.error(f"Failed to generate system report: {e}")
